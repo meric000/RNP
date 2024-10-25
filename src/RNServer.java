@@ -6,7 +6,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.Semaphore;
 
-public class RNWebServer {
+public class RNServer {
 
     public Semaphore workerSemaphore;
 
@@ -15,7 +15,7 @@ public class RNWebServer {
     /* Anzeige, ob der Server-Dienst weiterhin benoetigt wird */
     public boolean serviceRequested = true;
 
-    public RNWebServer(int portnummer, int anzahlCleints) {
+    public RNServer(int portnummer, int anzahlCleints) {
         this.port = portnummer;
         this.workerSemaphore = new Semaphore(anzahlCleints);
 
@@ -43,12 +43,13 @@ public class RNWebServer {
     }
 
     public static void main(String[] args) {
-        RNWebServer server = new RNWebServer(60000,2);
+        RNServer server = new RNServer(60000,2);
         server.startRNWebServer();
     }
 
 
 }
+
 class TCPWorkerThread extends Thread{
     /*
      * Arbeitsthread, der eine existierende Socket-Verbindung zur Bearbeitung
@@ -61,12 +62,12 @@ class TCPWorkerThread extends Thread{
 
     private int name;
     private Socket socket;
-    private RNWebServer server;
+    private RNServer server;
     private BufferedReader inFromClient;
     private DataOutputStream outToClient;
     boolean workerServiceRequested = true; // Arbeitsthread beenden?
 
-    public TCPWorkerThread(int num, Socket sock, RNWebServer server) {
+    public TCPWorkerThread(int num, Socket sock, RNServer server) {
         /* Konstruktor */
         this.name = num;
         this.socket = sock;

@@ -5,7 +5,8 @@ import java.io.InputStreamReader;
 import java.net.Socket;
 import java.util.Scanner;
 
-public class RNWebClient {
+public class RNClient {
+
     public final String CHARSET = "IBM-850"; // "UTF-8"
 
     /* Protokoll-Codierung des Zeilenendes: CRLF */
@@ -29,7 +30,7 @@ public class RNWebClient {
 
     private boolean serviceRequested = true; // Client beenden?
 
-    public RNWebClient(String hostname, int serverPort) {
+    public RNClient(String hostname, int serverPort) {
         this.serverPort = serverPort;
         this.hostname = hostname;
     }
@@ -44,8 +45,7 @@ public class RNWebClient {
         try {
             clientSocket = new Socket(hostname, serverPort);
             outToServer = new DataOutputStream(clientSocket.getOutputStream());
-            inFromServer = new BufferedReader(new InputStreamReader(
-                    clientSocket.getInputStream(), CHARSET));
+            inFromServer = new BufferedReader(new InputStreamReader(clientSocket.getInputStream(), CHARSET));
 
             inFromUser = new Scanner(System.in, CHARSET);
             System.err.println("Client startet with Source Port: " + clientSocket.getLocalPort() + " - Destination Port: " + clientSocket.getPort());
@@ -87,7 +87,7 @@ public class RNWebClient {
     }
     public static void main(String[] args) {
         /* Test: Erzeuge Client und starte ihn. */
-        RNWebClient myClient = new RNWebClient("localhost", 60000);  // Loopback (localhost) bei IPv6: "::1"
+        RNClient myClient = new RNClient("localhost", 60000);  // Loopback (localhost) bei IPv6: "::1"
         myClient.startJob();
     }
 
