@@ -9,6 +9,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 public class httpWebServer {
     public static void main(String[] args) throws IOException {
@@ -29,12 +31,14 @@ class Myhandler implements HttpHandler {
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
-        File htmlFile = new File("C:\\Users\\meric\\OneDrive\\Desktop\\UNI\\Sem6\\RNP\\src\\praktikum01\\Testweb\\index.html");
+        String path = exchange.getRequestURI().getPath();
+        File htmlFile = new File("C:\\Users\\meric\\OneDrive\\Desktop\\UNI\\Sem6\\RNP\\src\\praktikum01\\Testweb"+path);
 
 
 
         if (htmlFile.exists()) {
-            exchange.getResponseHeaders().set("Content-Type", "text/html; charset=UTF-8");
+            String mimeType = Files.probeContentType(Paths.get(htmlFile.getPath()));
+            exchange.getResponseHeaders().set("Content-Type", mimeType != null ? mimeType : "application/octet-stream");
             exchange.sendResponseHeaders(200, htmlFile.length());
 
             try (FileInputStream fis = new FileInputStream(htmlFile);
