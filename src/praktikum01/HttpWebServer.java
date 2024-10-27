@@ -9,64 +9,53 @@ import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
-import javax.servlet.ServletException;
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletRequestWrapper;
-import javax.servlet.http.HttpServletResponse;
-
-public class httpWebServer {
+public class HttpWebServer {
     public static void main(String[] args) throws IOException {
-        //Create Server
-        HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);
+        HttpServer server1 = HttpServer.create(new InetSocketAddress(8080), 0);
         //Create a context for a specific path and set the default executor
-        server.createContext("/", new Myhandler());
+        server1.createContext("/", new Myhandler());
 
         //starting the Server
-        server.setExecutor(null);
-        server.start();
-
-
-        System.out.println("Server is running on port 8080");
+        server1.setExecutor(null);
+        server1.start();
     }
+
 }
 
 class Myhandler implements HttpHandler {
+    public final String CHARSET = "UTF-8";
     private static final String ALLOWED_BROWSER = "Firefox";
+
 
     // doGet-Methode, die nur HttpExchange verwendet
     protected boolean doGet(HttpExchange exchange) throws IOException {
         // Prüfen, ob die .htuser-Datei existiert
-        File checkForHtuser = new File("C:\\Users\\meric\\OneDrive\\Desktop\\UNI\\Sem6\\RNP\\src\\praktikum01\\Testweb\\.htusers");
+        File checkForHtuser = new File("C:\\Users\\meric\\OneDrive\\Desktop\\UNI\\Sem6\\RNP\\src\\praktikum01\\Testweb\\.htuser");
         if (checkForHtuser.exists()) {
-            String authenticationQuestion = "Please send password with you header";
-            exchange.sendResponseHeaders(200, authenticationQuestion.length());
-            OutputStream os = exchange.getResponseBody();
-            os.write(authenticationQuestion.getBytes());
-            os.close();
-
+            String authHeader = exchange.getRequestHeaders().getFirst("Authorization");
+            if (authHeader == null) {
+                sendResponse(exchange, 401, "AuthHeader missing");
+                return false;
+            }
             try (BufferedReader loginReader = new BufferedReader(new FileReader(checkForHtuser))) {
                 String user;
-                String authHeader = exchange.getRequestHeaders().getFirst("Authorization");
                 while ((user = loginReader.readLine()) != null) {
                     if (user.contains(authHeader)) {
+                       /* exchange.getResponseHeaders().set("Location", "/index.html");
+                        exchange.sendResponseHeaders(302, -1); // 302 Found für Weiterleitung*/
                         return true;
                     }
                 }
+                sendResponse(exchange, 403, "Forbidden Authorization failed");
                 return false;
-            } catch (Exception e) {
-                throw new RuntimeException(e);
+
             }
         }
 
         // Prüfen des User-Agent-Headers
         String userAgent = exchange.getRequestHeaders().getFirst("User-Agent");
         if (userAgent == null || !userAgent.contains(ALLOWED_BROWSER)) {
-            String errorMessage = "406 Not Acceptable. Browser nicht akzeptiert. Bitte Firefox nutzen.";
-            exchange.sendResponseHeaders(406, errorMessage.length());
-            exchange.getResponseBody().write(errorMessage.getBytes());
-            exchange.close();
+            sendResponse(exchange, 406, "Wrong Browser use Firefox");
             return false;
         }
 
@@ -75,14 +64,15 @@ class Myhandler implements HttpHandler {
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
-        doGet(exchange);
+        if(!doGet(exchange)){
+            return;
+        }
 
         String path = exchange.getRequestURI().getPath();
         if (path.equals("/")) {
             path = "/index.html";
         }
         File htmlFile = new File("C:\\Users\\meric\\OneDrive\\Desktop\\UNI\\Sem6\\RNP\\src\\praktikum01\\Testweb"+path);
-
 
         if (htmlFile.exists()) {
             String mimeType = Files.probeContentType(Paths.get(htmlFile.getPath()));
@@ -99,13 +89,20 @@ class Myhandler implements HttpHandler {
             }
         } else {
             String errorResponse = "404 (Not Found)\nDie angeforderte Datei wurde nicht gefunden.";
+            sendResponse(exchange, 404, "404 Not Found: The requested file was not found.");
             exchange.getResponseHeaders().set("Content-Type", "text/plain; charset=UTF-8");
             exchange.sendResponseHeaders(404, errorResponse.length());
             try (OutputStream os = exchange.getResponseBody()) {
                 os.write(errorResponse.getBytes());
             }
         }
-
-
     }
+
+    private void sendResponse(HttpExchange exchange, int statusCode, String response) throws IOException {
+        exchange.sendResponseHeaders(statusCode, response.length());
+        try (OutputStream os = exchange.getResponseBody()) {
+            os.write(response.getBytes(CHARSET));
+        }
+    }
+
 }
