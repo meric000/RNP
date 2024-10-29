@@ -46,12 +46,6 @@ public class HttpWebClient {
                     "Authorization: " + getBasicAuthenticationHeader("testuser1", "super") + CRLF +
                     CRLF;
             // GET-Anfrage formatieren
-
-          /*  outToServer.println("GET / HTTP/1.1");
-            outToServer.println("Host: " + hostname);
-            outToServer.println("User-Agent: Firefox");
-            outToServer.println("Authorization: " + getBasicAuthenticationHeader("testuser1","super") );
-            outToServer.println("");  // Leere Zeile signalisiert das Ende der Header*/
             outToServer.writeBytes(request);
 
             String responseLine;
