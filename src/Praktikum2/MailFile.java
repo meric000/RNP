@@ -14,7 +14,7 @@ public class MailFile {
     private String pfadName;
     private String userMail = "wif635@haw-hamburg.de";
     private String userName = "wif635@haw-hamburg.de";
-    private String password = "SunnyMilou123.";
+    private String password = "funnypassword";
     /* Protokoll-Codierung des Zeilenendes: CRLF */
     private final String CRLF = "\r\n" ;
 
