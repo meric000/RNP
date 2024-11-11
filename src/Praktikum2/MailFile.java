@@ -1,131 +1,168 @@
 package Praktikum2;
 
+import javax.net.ssl.SSLSocketFactory;
 import java.io.*;
 import java.net.Socket;
-import java.nio.charset.Charset;
-import java.util.Arrays;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Base64;
 import java.util.Properties;
-import java.util.Scanner;
 
 public class MailFile {
 
-    private String empfaenerMail;
-    private String pfadName;
-    private String userMail = "wif635@haw-hamburg.de";
-    private String userName = "wif635@haw-hamburg.de";
-    private String password = "SunnyMilou123.";
-    /* Protokoll-Codierung des Zeilenendes: CRLF */
-    private final String CRLF = "\r\n" ;
+    public Properties props = new Properties();
 
-    /* Portnummer */
-    private final int serverPort = 25;
-
-    /* Hostname */
-    private final String hostname = "smtp-mail.outlook.com";
-
-    /* TCP-Standard-Socketklasse */
-    private Socket clientSocket;
-
-    /* Ausgabestream zum Server */
-    private DataOutputStream outToServer;
-
-    /* Eingabestream vom Server
-       Wenn Binärdaten verarbeitet werden müssen, kann auch DataInputStream verwendet werden */
-    private BufferedReader inFromServer;
-
-    private boolean serviceRequested = true; // Client beenden?
-
-    Properties properties = new Properties();
-
-    String betreff = "Cooler Betreff";
-    String inhalt = "Noch coolerer Inhalt";
-
-    public void sendMail() throws IOException {
-        //Todo: Richtige Konsoleneingabe nachbearbeiten
-        System.out.println("Gib daten ein mit leerzeiche");
-        Scanner input = new Scanner(System.in);
-        String userInput = input.nextLine();
-        String[] data = userInput.split(" ");
-        empfaenerMail = data[0];
-        pfadName = data[1];
-        System.out.println("mail: "+empfaenerMail+"pfad: "+pfadName);
-        buildMail();
+    private String senderEmail;
+    private String username;
+    private String password;
+    private String smtpHost;
+    private int smtpPort;
 
 
-    }
-
-    public void buildMail() throws IOException {
-        try (Socket socket = new Socket(hostname, serverPort);
-             BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-             BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())))
-        {
-            //Handshake
-            reader.readLine();
-            writer.write("EHLO " + hostname + "\r\n");
-            writer.flush();
-            readResponse(reader);
-
-            // Startet die TLS-Verschlüsselung, falls der Port 465 verwendet wird (optional)
-            writer.write("STARTTLS\r\n");
-            writer.flush();
-            readResponse(reader);
-
-            // AUTH LOGIN für Authentifizierung mit Base64-kodiertem Benutzername und Passwort
-            writer.write("AUTH LOGIN\r\n");
-            writer.flush();
-            readResponse(reader);
-            writer.write(Base64.getEncoder().encodeToString(userName.getBytes()) + "\r\n");
-            writer.flush();
-            readResponse(reader);
-            writer.write(Base64.getEncoder().encodeToString(password.getBytes()) + "\r\n");
-            writer.flush();
-            readResponse(reader);
-
-            // MAIL FROM
-            writer.write("MAIL FROM:<" + userMail + ">\r\n");
-            writer.flush();
-            readResponse(reader);
-
-            // RCPT TO
-            writer.write("RCPT TO:<" + empfaenerMail + ">\r\n");
-            writer.flush();
-            readResponse(reader);
-
-            // DATA-Befehl starten
-            writer.write("DATA\r\n");
-            writer.flush();
-            readResponse(reader);
-
-            // Nachrichtentext senden
-            writer.write("Subject: " + betreff + "\r\n");
-            writer.write("To: " + empfaenerMail + "\r\n");
-            writer.write("From: " + userMail + "\r\n");
-            writer.write("\r\n"); // Leere Zeile vor dem eigentlichen Nachrichtentext
-            writer.write(inhalt + "\r\n");
-            writer.write(".\r\n"); // Punkt alleine auf einer Zeile beendet DATA-Befehl
-            writer.flush();
-            readResponse(reader);
-
-            // QUIT zum Beenden der SMTP-Session
-            writer.write("QUIT\r\n");
-            writer.flush();
-            readResponse(reader);
-
-
+    public void buildMail() {
+        try (InputStream input = new FileInputStream("C:/Users/meric/OneDrive/Desktop/UNI/Sem6/RNP/src/Praktikum2/MailFile.ini")) {
+            props.load(input);
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
         }
+        senderEmail = props.getProperty("SENDER_ADDRESS");
+        username = props.getProperty("USER_ACCOUNT");
+        password = props.getProperty("PASSWORD");
+        smtpHost = props.getProperty("SMTP_ADDRESS");
+        smtpPort = Integer.parseInt(props.getProperty("SMTP_PORT"));
+
     }
 
-    private static void readResponse(BufferedReader reader) throws IOException {
-        String response = reader.readLine();
-        System.out.println("Server: " + response);
+    public int getSmtpPort() {
+        return smtpPort;
+    }
+
+    public void setSmtpPort(int smtpPort) {
+        this.smtpPort = smtpPort;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public String getSenderEmail() {
+        return senderEmail;
+    }
+
+    public void setSenderEmail(String senderEmail) {
+        this.senderEmail = senderEmail;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public Properties getProps() {
+        return props;
+    }
+
+    public void setProps(Properties props) {
+        this.props = props;
+    }
+
+    public String getSmtpHost() {
+        return smtpHost;
+    }
+
+    public void setSmtpHost(String smtpHost) {
+        this.smtpHost = smtpHost;
     }
 
     public static void main(String[] args) throws IOException {
+        String recipientEmail = args[0];
+        String filePath = args[1];
         MailFile mf = new MailFile();
-        mf.sendMail();
+        mf.buildMail();
+
+        Socket socket = mf.getSmtpPort() == 465 ? ((SSLSocketFactory) SSLSocketFactory.getDefault()).createSocket(mf.getSmtpHost(), mf.getSmtpPort()) : new Socket(mf.getSmtpHost(), mf.getSmtpPort());
+        PrintWriter writer = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()), true);
+        BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+
+        // SMTP-Kommandos senden
+        System.out.println("Server: " + reader.readLine());
+        writer.println("HELO " + mf.getSmtpHost());
+        System.out.println("Client: HELO " + mf.getSmtpHost());
+        System.out.println("Server: " + reader.readLine());
+
+        // AUTH LOGIN mit Base64-codierten Anmeldeinformationen
+        writer.println("AUTH LOGIN");
+        System.out.println("Client: AUTH LOGIN");
+        System.out.println("Server: " + reader.readLine());
+
+        writer.println(Base64.getEncoder().encodeToString(mf.getUsername().getBytes()));
+        System.out.println("Client: " + Base64.getEncoder().encodeToString(mf.getUsername().getBytes()));
+        System.out.println("Server: " + reader.readLine());
+
+        writer.println(Base64.getEncoder().encodeToString(mf.getPassword().getBytes()));
+        System.out.println("Client: " + Base64.getEncoder().encodeToString(mf.getPassword().getBytes()));
+        System.out.println("Server: " + reader.readLine());
+
+        // Absender- und Empfängeradresse
+        writer.println("MAIL FROM:<" + mf.getSenderEmail() + ">");
+        System.out.println("Client: MAIL FROM:<" + mf.getSenderEmail() + ">");
+        System.out.println("Server: " + reader.readLine());
+
+        writer.println("RCPT TO:<" + recipientEmail + ">");
+        System.out.println("Client: RCPT TO:<" + recipientEmail + ">");
+        System.out.println("Server: " + reader.readLine());
+
+        // Beginn der Datenübertragung
+        writer.println("DATA");
+        System.out.println("Client: DATA");
+        System.out.println("Server: " + reader.readLine());
+
+        // Betreff und MIME-Header senden
+        writer.println("Subject: Test Email with Attachment");
+        writer.println("MIME-Version: 1.0");
+        writer.println("Content-Type: multipart/mixed; boundary=\"boundary\"");
+        writer.println();
+        writer.println("--boundary");
+        writer.println("Content-Type: text/plain");
+        writer.println();
+        writer.println("This is a test email with an attachment.");
+
+        // Datei als Anhang hinzufügen
+        writer.println("--boundary");
+        writer.println("Content-Type: application/octet-stream; name=\"" + Paths.get(filePath).getFileName() + "\"");
+        writer.println("Content-Transfer-Encoding: base64");
+        writer.println("Content-Disposition: attachment; filename=\"" + Paths.get(filePath).getFileName() + "\"");
+        writer.println();
+
+        byte[] fileContent = Files.readAllBytes(Paths.get(filePath));
+        writer.println(Base64.getEncoder().encodeToString(fileContent));
+        writer.println("--boundary--");
+
+        // Ende der Datenübertragung
+        writer.println(".");
+        System.out.println("Client: .");
+        System.out.println("Server: " + reader.readLine());
+
+        // Beenden der Verbindung
+        writer.println("QUIT");
+        System.out.println("Client: QUIT");
+        System.out.println("Server: " + reader.readLine());
+
+        writer.close();
+        reader.close();
+        socket.close();
     }
+
 }
+
 
 
 
