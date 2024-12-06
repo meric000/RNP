@@ -48,7 +48,6 @@ public class RFTClientRcvThread extends Thread {
 
 			if (ack.getSeqNum() > sendbase) {
 				/* -------- Evaluate ACK ----------- */
-			
 				/* ToDo */
             
 			} else {

@@ -4,8 +4,13 @@ package Praktikum3;
  Praktikum Rechnernetze HAW Hamburg
  Autoren: 
  */
-import java.io.*;
-import java.net.*;
+
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 
 public class RFTClient extends Thread {
 	/* --------- Constants ------------ */
@@ -175,18 +180,34 @@ public class RFTClient extends Thread {
 	 * Implementation specific task performed at timeout
 	 */
 	public void timeoutTask() {
-     
-     /* ToDo */
-     
+		sendPacket(rftSendPacket,false);
+		rft_timer.startTimer(timeoutInterval,true);
+
 	}
 
 	public void computeTimeoutInterval(long sampleRTT) {
-      /* Computes the current timeoutInterval (in nanoseconds) 
-       * Result: Variable timeoutInterval */
 
-      /* ToDo */
-      
+		if (estimatedRTT == 0) {
+			estimatedRTT = 4 * sampleRTT;
+		} else {
+			/* Computes the current timeoutInterval (in nanoseconds)
+			 * Result: Variable timeoutInterval */
+			computeEstimatedRTT(sampleRTT);
+			computeDeviation(sampleRTT);
+			timeoutInterval = (long) (estimatedRTT + 4 * deviation);
+		}
+
 	}
+	private void computeEstimatedRTT(long sampleRTT) {
+		float x = 0.125f;
+		estimatedRTT = (long) ((1.0f - x) * estimatedRTT + x * sampleRTT);
+	}
+
+	private void computeDeviation(long sampleRTT) {
+		float x = 0.125f;
+		deviation = (long) ((1.0f - x) + deviation + x + Math.abs(sampleRTT - estimatedRTT));
+	}
+
 
 	public RFTpacket makeControlPacket() {
 		/*
