@@ -186,18 +186,17 @@ public class RFTClient extends Thread {
 	}
 
 	public void computeTimeoutInterval(long sampleRTT) {
-
+		/* Computes the current timeoutInterval (in nanoseconds)
+		 * Result: Variable timeoutInterval */
 		if (estimatedRTT == 0) {
 			estimatedRTT = 4 * sampleRTT;
 		} else {
-			/* Computes the current timeoutInterval (in nanoseconds)
-			 * Result: Variable timeoutInterval */
 			computeEstimatedRTT(sampleRTT);
-			computeDeviation(sampleRTT);
-			timeoutInterval = (long) (estimatedRTT + 4 * deviation);
 		}
-
+		computeDeviation(sampleRTT);
+		timeoutInterval = (long) (estimatedRTT + 4 * deviation);
 	}
+
 	private void computeEstimatedRTT(long sampleRTT) {
 		float x = 0.125f;
 		estimatedRTT = (long) ((1.0f - x) * estimatedRTT + x * sampleRTT);

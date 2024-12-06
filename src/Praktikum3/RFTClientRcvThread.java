@@ -48,7 +48,9 @@ public class RFTClientRcvThread extends Thread {
 
 			if (ack.getSeqNum() > sendbase) {
 				/* -------- Evaluate ACK ----------- */
-				/* ToDo */
+				myRFTC.computeTimeoutInterval(myRFTC.timeoutInterval);
+				sendbase = ack.getSeqNum();
+
             
 			} else {
 				/* ------- Fast Retransmit ? ----- */
