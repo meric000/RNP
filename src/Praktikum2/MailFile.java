@@ -18,7 +18,6 @@ public class MailFile {
     private String smtpHost;
     private int smtpPort;
 
-
     public void buildMail() {
         try (InputStream input = new FileInputStream("C:/Users/meric/OneDrive/Desktop/UNI/Sem6/RNP/src/Praktikum2/MailFile.ini")) {
             props.load(input);
@@ -38,11 +37,9 @@ public class MailFile {
         return smtpPort;
     }
 
-
     public String getPassword() {
         return password;
     }
-
 
     public String getSenderEmail() {
         return senderEmail;
@@ -51,7 +48,6 @@ public class MailFile {
     public String getUsername() {
         return username;
     }
-
 
     public String getSmtpHost() {
         return smtpHost;
@@ -137,14 +133,13 @@ public class MailFile {
         System.out.println("Server: " + reader.readLine());
     }
 
-
     public static void main(String[] args) throws IOException {
         String recipientEmail = args[0];
         String filePath = args[1];
         MailFile mf = new MailFile();
         mf.buildMail();
 
-        Socket socket = mf.getSmtpPort() == 465 ? ((SSLSocketFactory) SSLSocketFactory.getDefault()).createSocket(mf.getSmtpHost(), mf.getSmtpPort()) : new Socket(mf.getSmtpHost(), mf.getSmtpPort());
+        Socket socket = mf.getSmtpPort() == 465 ? SSLSocketFactory.getDefault().createSocket(mf.getSmtpHost(), mf.getSmtpPort()) : new Socket(mf.getSmtpHost(), mf.getSmtpPort());
         PrintWriter writer = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()), true);
         BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
@@ -159,7 +154,6 @@ public class MailFile {
         mf.attachFile(writer, filePath);
 
         mf.closeMail(reader, writer);
-
 
         writer.close();
         reader.close();
