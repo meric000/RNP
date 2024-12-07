@@ -182,7 +182,6 @@ public class RFTClient extends Thread {
 	public void timeoutTask() {
 		sendPacket(rftSendPacket,false);
 		rft_timer.startTimer(timeoutInterval,true);
-
 	}
 
 	public void computeTimeoutInterval(long sampleRTT) {

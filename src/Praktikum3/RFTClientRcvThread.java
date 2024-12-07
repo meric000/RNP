@@ -50,13 +50,22 @@ public class RFTClientRcvThread extends Thread {
 				/* -------- Evaluate ACK ----------- */
 				myRFTC.computeTimeoutInterval(myRFTC.timeoutInterval);
 				sendbase = ack.getSeqNum();
+				myRFTC.sendBuf.remove(sendbase);
+				if(myRFTC.sendBuf.getSendbasePacket() != null){
+					myRFTC.rft_timer.startTimer(myRFTC.timeoutInterval,true);
+				}else {
+					myRFTC.rft_timer.cancelTimer();
+				}
 
-            
 			} else {
 				/* ------- Fast Retransmit ? ----- */
 				if (myRFTC.fastRetransmitMode) {
-                
-                /* ToDo */
+					if(ack.getSeqNum() == sendbase){
+						dupCounter++;
+						if(dupCounter>=3){
+							myRFTC.timeoutTask();
+						}
+					}
                 
 				}
 			}
