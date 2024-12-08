@@ -75,7 +75,7 @@ public class RFT_Timer extends Thread {
 			delay = timeoutInterval;
 			isRunning = true;
 			notify();
-			//myRFTC.testOut("------------------ RFT_Timer started: " + timeoutInterval);
+			myRFTC.testOut("------------------ RFT_Timer started: " + timeoutInterval);
 		} else {
 			if (restartIfRunning) {
 				/* Start Timer if already running */
@@ -83,7 +83,7 @@ public class RFT_Timer extends Thread {
 				taskIsCancelled = true;
 				isRestarted = true;
 				notify();
-				//myRFTC.testOut("------------------ RFT_Timer restarted: " + timeoutInterval);
+				myRFTC.testOut("------------------ RFT_Timer restarted: " + timeoutInterval);
 			}
 		}
 	}
@@ -93,7 +93,7 @@ public class RFT_Timer extends Thread {
 		if (isRunning) {
 			taskIsCancelled = true;
 			notify();
-			//myRFTC.testOut("------------------ RFT_Timer cancelled!");
+			myRFTC.testOut("------------------ RFT_Timer cancelled!");
 		}
 	}
 

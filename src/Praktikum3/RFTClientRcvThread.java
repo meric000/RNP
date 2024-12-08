@@ -6,7 +6,7 @@ package Praktikum3;
  */
 
 import java.io.IOException;
-import java.net.*;
+import java.net.DatagramPacket;
 
 public class RFTClientRcvThread extends Thread {
 	/* Receive UDP packets and handle the ACKs */
@@ -48,7 +48,10 @@ public class RFTClientRcvThread extends Thread {
 
 			if (ack.getSeqNum() > sendbase) {
 				/* -------- Evaluate ACK ----------- */
-				myRFTC.computeTimeoutInterval(myRFTC.timeoutInterval);
+				long timestamp = myRFTC.sendBuf.getSendbasePacket().getTimestamp();
+				if(timestamp > 0) {
+					myRFTC.computeTimeoutInterval(System.nanoTime()-timestamp);
+				}
 				sendbase = ack.getSeqNum();
 				myRFTC.sendBuf.remove(sendbase);
 				if(myRFTC.sendBuf.getSendbasePacket() != null){
@@ -62,8 +65,10 @@ public class RFTClientRcvThread extends Thread {
 				if (myRFTC.fastRetransmitMode) {
 					if(ack.getSeqNum() == sendbase){
 						dupCounter++;
-						if(dupCounter>=3){
+						if(dupCounter==3){
+							System.out.println("packet sened morte than 3 times timeout is started");
 							myRFTC.timeoutTask();
+							dupCounter = 0;
 						}
 					}
                 

@@ -180,30 +180,19 @@ public class RFTClient extends Thread {
 	 * Implementation specific task performed at timeout
 	 */
 	public void timeoutTask() {
-		sendPacket(rftSendPacket,false);
+		sendPacket(sendBuf.getSendbasePacket(),false);
 		rft_timer.startTimer(timeoutInterval,true);
 	}
 
 	public void computeTimeoutInterval(long sampleRTT) {
 		/* Computes the current timeoutInterval (in nanoseconds)
 		 * Result: Variable timeoutInterval */
-		if (estimatedRTT == 0) {
+		if (estimatedRTT == -1) {
 			estimatedRTT = 4 * sampleRTT;
-		} else {
-			computeEstimatedRTT(sampleRTT);
 		}
-		computeDeviation(sampleRTT);
+		estimatedRTT =  (1 - X) * estimatedRTT + X * sampleRTT;
 		timeoutInterval = (long) (estimatedRTT + 4 * deviation);
-	}
-
-	private void computeEstimatedRTT(long sampleRTT) {
-		float x = 0.125f;
-		estimatedRTT = (long) ((1.0f - x) * estimatedRTT + x * sampleRTT);
-	}
-
-	private void computeDeviation(long sampleRTT) {
-		float x = 0.125f;
-		deviation = (long) ((1.0f - x) + deviation + x + Math.abs(sampleRTT - estimatedRTT));
+		deviation =  (1 - X) * deviation + X * Math.abs(sampleRTT - estimatedRTT);
 	}
 
 
@@ -240,7 +229,8 @@ public class RFTClient extends Thread {
 					+ "    2 Quellpfad (inkl. Dateiname) der zu sendenden lokalen Datei\n"
 					+ "    3 Zielpfad (inkl. Dateiname) der zu empfangenden Datei (falls bereits vorhanden, wird die Datei ueberschrieben)\n"
 					+ "    4 Window Size (Sendepuffergroesse = Empfangspuffergroesse) in Anzahl Bytes\n"
-					+ "    5 Fehlerrate zur Auswertung fuer den Server\n" + "    6 FastRetransmitMode (true/false)\n"
+					+ "    5 Fehlerrate zur Auswertung fuer den Server\n"
+					+ "    6 FastRetransmitMode (true/false)\n"
 					+ "    7 Testoutput-Mode (true/false)\n");
 
 		} else {
