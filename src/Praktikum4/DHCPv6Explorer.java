@@ -24,8 +24,9 @@ import java.util.Scanner;
 
 public class DHCPv6Explorer {
     public final int SERVER_PORT = 547;
-    public final String IPV6 = "fd00::dc87:5630:d0d3:e940";
+
     byte[] solicitbyteHeader;
+    public final String IPV6 = "ff02::1:2%5";
     public final String HOSTNAME = "localhost";
     public final int BUFFER_SIZE = 1024;
     public final String CHARSET = "IBM-850"; // "UTF-8"
@@ -66,12 +67,12 @@ public class DHCPv6Explorer {
                 if (sentence.startsWith("quit")) {
                     serviceRequested = false;
                 } else {
-
                     /* Sende den String als UDP-Paket zum Server */
-                    writeToServer(sentence);
+                    writeToServer();
 
                     /* Modifizierten String vom Server empfangen */
-                    modifiedSentence = readFromServer();
+                    System.err.println(readFromServer());
+
                 }
             }
 
@@ -90,11 +91,15 @@ public class DHCPv6Explorer {
         String messageType = "01";
 
         // Transaktions-ID: 3 Bytes (Beispiel: 123456)
-        String transactionId = "123456";
+        String transactionId = String.format("%06X", new java.util.Random().nextInt(0xFFFFFF));
 
         String clientID = buildClientIdString();
 
-        solicitbyteHeader = hexStringtoByteArray(messageType+transactionId+clientID);
+        String optionHeader = buildOptionRequestOptionString();
+
+        String elapsedTimeOption = "000800020000";
+
+        solicitbyteHeader = hexStringtoByteArray(messageType+transactionId+clientID+optionHeader);
     }
 
     private String buildClientIdString(){
@@ -110,13 +115,24 @@ public class DHCPv6Explorer {
 
     }
 
+    private static String buildOptionRequestOptionString() {
+        // Option Code: 6 (Option Request) -> 0006
+        String optionCode = "0006";
 
-    private void writeToServer(String sendString) throws IOException {
+        // Länge der Option: 2 Bytes -> 0002
+        String optionLength = "0002";
+
+        // Angeforderte Optionen (z. B. DNS-Server = Option 23 -> 0017)
+        String requestedOptions = "0017";
+
+        // Zusammensetzen
+        return optionCode + optionLength + requestedOptions;
+    }
+
+
+    private void writeToServer() throws IOException {
         createSolcitHeader();
         /* Sende den String als UDP-Paket zum Server */
-
-        /* String in Byte-Array umwandeln */
-        //byte[] sendData = sendString.getBytes(CHARSET);
 
         /* Paket erzeugen mit Server-IP und Server-Zielport */
         DatagramPacket sendPacket = new DatagramPacket(solicitbyteHeader, solicitbyteHeader.length,
@@ -124,26 +140,34 @@ public class DHCPv6Explorer {
         /* Senden des Pakets */
         clientSocket.send(sendPacket);
 
-        System.err.println("UDP Client has sent the message: " + sendString);
+        System.err.println("UDP Client has sent the message: " + byteArraytoHexString(solicitbyteHeader));
     }
 
     private String readFromServer() throws IOException {
         /* Liefere den naechsten String vom Server */
         String receiveString = "";
 
+
         /* Paket fuer den Empfang erzeugen */
         byte[] receiveData = new byte[BUFFER_SIZE];
         DatagramPacket receivePacket = new DatagramPacket(receiveData, BUFFER_SIZE);
+
+        System.err.println("Received data length: " + receivePacket.getLength());
+        System.err.println("Received data: " + byteArraytoHexString(receivePacket.getData()));
 
         /* Warte auf Empfang des Antwort-Pakets auf dem eigenen (Quell-)Port,
          * den der Server aus dem Nachrichten-Paket ermittelt hat */
         clientSocket.receive(receivePacket);
 
-        /* Paket wurde empfangen --> auspacken und Inhalt anzeigen */
-        receiveString = new String(receivePacket.getData(), 0,
-                receivePacket.getLength(), CHARSET);
+        byteArraytoHexString(receivePacket.getData());
 
-        System.err.println("UDP Client got from Server: " + receiveString);
+        /* Paket wurde empfangen --> auspacken und Inhalt anzeigen */
+        // receiveString = new String(receivePacket.getData(), 0, receivePacket.getLength(), CHARSET);
+
+        receiveString = byteArraytoHexString(receivePacket.getData());
+
+
+        System.err.println("Antwort vom Server " + receiveString);
 
         return receiveString;
     }
@@ -194,7 +218,7 @@ public class DHCPv6Explorer {
 
     public static void main(String[] args) throws SocketException {
         DHCPv6Explorer myClient = new DHCPv6Explorer();
-        myClient.showNetwork();
         myClient.startJob();
+        //myClient.showNetwork();
     }
 }
